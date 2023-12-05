@@ -4,6 +4,7 @@ import torch
 from architecture import *
 from mcts import *
 from training import *
+from selfplay import *
 
 def main(**kwargs):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
