@@ -5,6 +5,7 @@ import random
 import utilities
 import numpy as np
 import torch 
+from tqdm import tqdm
 ## Should also define classes to handle data
 
 ## Convetion format for a trajectory
@@ -42,7 +43,7 @@ def main(S: int, r_limit: int, factor_dist: dict, N: int, seed: int = None):
 
     SAR_pairs = []
     
-    for i in range(N):
+    for i in tqdm(range(N)):
         R = random.randint(1, r_limit)
         T = torch.zeros((S, S, S), dtype=torch.int)
         reward = 0
@@ -57,5 +58,11 @@ def main(S: int, r_limit: int, factor_dist: dict, N: int, seed: int = None):
             
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    main()
+    S = 3
+    r_limit = 80
+    factor_dist = {-2: .001, -1: .099, 0: .8, 1: .099, 2: .001}
+    N = 1000
+    seed = 123456
+    SAR_pairs = main(S, r_limit, factor_dist, N, seed=seed)
+
+    torch.save(SAR_pairs, f"data/SAR_pairs_{S}_{N}_{seed}.pt")
