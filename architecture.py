@@ -3,6 +3,8 @@
 import torch
 from torch import nn
 
+
+## Adding batching?
 class Attention(nn.Module):
     
     def __init__(self, Nx, c1, Ny, c2, causal_mask = False, N_heads = 16, w = 4):
@@ -74,6 +76,7 @@ class PolicyHead(nn.Module):
         super().__init__()
         self.ln1 = nn.Linear(Nlogits, Nfeatures * Nheads)
         self.lookup = nn.Parameter(torch.empty((Nsteps, Nfeatures * Nheads)))
+        nn.init.normal_(self.lookup, mean=0, std=1)
 
     def forward(self):
         ## How to make different for training and inference?
