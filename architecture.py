@@ -5,17 +5,19 @@ from torch import nn
 
 
 ## Adding batching?
+
 class Attention(nn.Module):
     
     def __init__(self, Nx, c1, Ny, c2, causal_mask = False, N_heads = 16, w = 4):
         super().__init__()
         self.ln1 = nn.LayerNorm([Nx, c1])
         self.ln2 = nn.LayerNorm([Ny, c2])
+        self.causal_mask = causal_mask
         if not causal_mask:
             self.MAH = nn.MultiheadAttention(embed_dim=c1, kdim=c2, vdim=c2, num_heads=N_heads)
         else:
-            mask = torch.triu(torch.ones((Nx, Ny)))
-            self.MAH = nn.MultiheadAttention(embed_dim=c1, kdim=c2, vdim=c2, num_heads=N_heads, attn_mask=mask)
+            self.mask = torch.triu(torch.ones((Nx, Ny)))
+            self.MAH = nn.MultiheadAttention(embed_dim=c1, kdim=c2, vdim=c2, num_heads=N_heads)
         self.ln3 = nn.LayerNorm([Nx, c1])
         self.l1 = nn.Linear(c1, c1*w)
         self.gelu = nn.GELU()
@@ -24,7 +26,10 @@ class Attention(nn.Module):
     def forward(self, x, y):
         xn = self.ln1(x)
         yn = self.ln2(y)
-        attn, _ = self.MAH(xn, yn, yn)
+        if self.causal_mask:
+            attn, _ = self.MAH(xn, yn, yn, attn_mask=self.mask)
+        else:
+            attn, _ = self.MAH(xn, yn, yn)
         x = x + attn
         x = x + self.l2(self.gelu(self.l1(self.ln3(x))))
         return x
@@ -74,13 +79,70 @@ class Torso(nn.Module):
 class PolicyHead(nn.Module):
     def __init__(self, Nsteps, Nlogits, s, c, Nfeatures = 64, Nheads = 16, Nlayers = 2):
         super().__init__()
-        self.ln1 = nn.Linear(Nlogits, Nfeatures * Nheads)
+        self.Nlayers = Nlayers
+        self.Nlogits = Nlogits
+        self.Nsteps = Nsteps
+        self.Nfeatures = Nfeatures
+        self.Nheads = Nheads
+
+
+        self.l1 = nn.Linear(Nlogits, Nfeatures * Nheads)
+        self.ln = nn.LayerNorm([Nsteps, Nfeatures * Nheads])
         self.lookup = nn.Parameter(torch.empty((Nsteps, Nfeatures * Nheads)))
         nn.init.normal_(self.lookup, mean=0, std=1)
 
-    def forward(self):
-        ## How to make different for training and inference?
-        pass
+        self.ln = nn.LayerNorm([Nsteps, Nfeatures * Nheads])
+        self.dropout = nn.Dropout(p=0.1)
+        self.self_attention = nn.ModuleList([Attention(Nsteps, Nfeatures * Nheads, Nsteps, Nfeatures * Nheads, causal_mask=True, N_heads=Nheads) for _ in range(Nlayers)])
+        self.cross_attention = nn.ModuleList([Attention(Nsteps, Nfeatures * Nheads, 3 * s ** 2, c, N_heads=Nheads) for _ in range(Nlayers)])
+        
+        self.relu = nn.ReLU()
+        self.l2 = nn.Linear(Nfeatures * Nheads, Nlogits)
+
+    def predict_logits(self, a, e):
+        x = self.l1(a)
+        # x  = x + Learnable Position Encoding
+
+        for i in range(self.Nlayers):
+            x = self.ln(x)
+            c = self.self_attention[i](x, x)
+            c = self.dropout(c)
+            x = x + c
+            x = self.ln(x)
+            c = self.cross_attention[i](x, e)
+            c = self.dropout(c)
+            x = x + c
+        o = self.l2(self.relu(x))
+        return o, x
+    
+    def forward(self, e, **kwargs):
+        if self.training:
+            g = kwargs['g']
+            #I'm not entirely sure this is right -- need to think on tokens and what the null character is
+            #g = torch.cat((torch.tensor([0]), g))
+            #Not working at the moment, going to stick with this and not shifting, but maybe there's a shift or something needed?
+            a = nn.functional.one_hot(g, self.Nlogits).float()
+            o, z = self.predict_logits(a, e)
+            return o, z
+        
+        else:
+            Nsamples = kwargs['Nsamples']
+            a = torch.zeros((Nsamples, self.Nsteps)).long()
+            p = torch.ones(Nsamples)
+            #z = torch.zeros((Nsamples, self.Nsteps, self.Nfeatures * self.Nheads))
+            #Don't care about exporting Z anymore
+            for j in range(Nsamples):
+                for i in range(self.Nsteps):
+                    encoded = nn.functional.one_hot(a[j, :], self.Nlogits)
+                    o, _ = self.predict_logits(encoded.float(), e)
+                    probs = torch.softmax(o[i, :], 0)
+                    a[j, i] = torch.multinomial(probs, num_samples=1)
+                    p = p * probs[a[j, i]]
+
+            return a, p
+            
+        
+
 
 class ValueHead(nn.Module):
     def __init__(self, c, d):
@@ -107,10 +169,22 @@ class ValueHead(nn.Module):
 ## Also, need to be careful with setting up training vs acting
 
 class AlphaTensor184(nn.Module):
-    def __init__(self):
+    def __init__(self, s, c, d, Nlogits, Nsteps, Nsamples, torso_iterations = 8):
         super().__init__()
+        self.s = s
+        self.c = c
+        self.Nlogits = Nlogits
+        self.Nsteps = Nsteps
+        self.Nsamples = Nsamples
+        
+        self.torso = Torso(s, c, torso_iterations)
+        self.value_head = ValueHead(c, d) 
+        self.policy_head = PolicyHead(Nsteps, Nlogits, s, c)
     
     def forward(self, x):
-        pass
+        if self.training:
+            pass
+        else:
+            pass
     
         
