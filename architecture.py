@@ -68,6 +68,38 @@ class Torso(nn.Module):
             x1, x2, x3 = am(x1, x2, x3)
 
         e = torch.reshape(torch.stack([x1, x2, x3], axis=1), (3 * self.s ** 2, self.c))
+
+class PolicyHead(nn.Module):
+    def __init__(self, Nsteps, Nlogits, s, c, Nfeatures = 64, Nheads = 16, Nlayers = 2):
+        super().__init__()
+        self.ln1 = nn.Linear(Nlogits, Nfeatures * Nheads)
+        self.lookup = nn.Parameter(torch.empty((Nsteps, Nfeatures * Nheads)))
+
+    def forward(self):
+        ## How to make different for training and inference?
+        pass
+
+class ValueHead(nn.Module):
+    def __init__(self, c, d):
+        super().__init__()
+        self.c = c
+        self.d = d
+        
+        self.l1 = nn.Linear(c, d)
+        self.relu = nn.ReLU()
+        self.l2 = nn.Linear(d, d)
+        self.l3 = nn.Linear(d, d)
+        self.lf = nn.Linear(d, 1)
+
+    def forward(self, x):
+        x = torch.mean(x, axis=0)
+        x = self.relu(self.l1(x))
+        x = self.relu(self.l2(x))
+        x = self.relu(self.l3(x))
+        x = self.lf(x)
+        return x
+
+
 ## Before implementing heads, read up on Torch head/transformer modules and how they work further. Unclear to me if their transformers do what we want. 
 ## Also, need to be careful with setting up training vs acting
 
