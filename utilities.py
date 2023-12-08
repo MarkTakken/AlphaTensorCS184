@@ -7,7 +7,6 @@ class Tokenizer():
     
     def tokenize(self, tensor: torch.Tensor) -> torch.Tensor:
         dp = (tensor - self.low) * torch.Tensor([[1, (self.high-self.low) + 1, (self.high-self.low + 1)**2]])
-        print(dp)
         return torch.sum(dp, axis=1).int()
 
     def detokenize(self, token: torch.Tensor) -> torch.Tensor:
