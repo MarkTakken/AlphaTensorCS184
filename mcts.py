@@ -13,7 +13,7 @@ class MCTS:
         self.Q = dict()         # state.to_string() -> state value (value func)
         self.Qsa = dict()       # state.to_string() -> action value (Q func)
     
-    def search(self, state):
+    def single_search(self, state):
         if state.done():
             return state.terminal_reward()
         
@@ -47,10 +47,46 @@ class MCTS:
         # Play the chosen action, perform a search on the new state and update the values and visit counts accordingly
         # Return the value of the current state up the branch
         newstate, reward = state.play(best_a)
-        new_val = self.search(newstate)
+        new_val = self.single_search(newstate)
         self.Q[key] = (self.Q[key]*self.N[key] + new_val + reward)/(self.N[key]+1)
         self.N[key] += 1
         keysa = state.to_string(best_a)
         self.Qsa[keysa] = (self.Qsa[keysa]*self.Nsa[keysa] + new_val + reward)/(self.Nsa[keysa]+1)
         self.Nsa[keysa] += 1
         return new_val + reward
+    
+    def search(self, num_sim):
+        for _ in num_sim:
+            self.single_search(self.root)
+    
+    def get_action_probs(self, temp=1.0):
+        key = self.root.to_string()
+        if temp > 0:
+            probs = []
+            s = 0
+            for a in self.A[key].actions:
+                count = self.Nsa[self.root.to_string(a)]**(1/temp)
+                s += count
+                probs.append(count)
+            return np.array(probs/s)
+        else:
+            best_i, best_n = None, 0
+            for (i,a) in enumerate(self.A[key].actions):
+                count = self.Nsa[self.root.to_string(a)]
+                if count > best_n:
+                    best_n = count
+                    best_i = i
+            probs = np.zeros(self.A[key].actions)
+            probs[best_i] = 1.0
+            return probs
+    
+    def choose_move(self, temp=1.0):
+        probs = self.get_action_probs(temp=temp)
+        actions = self.A[self.root].actions
+        return np.choice(actions, p=probs)
+    
+    def search_and_play(self, num_sim, temp=1.0):
+        self.search(num_sim)
+        action = self.choose_move(temp=temp)
+        self.root, reward = self.root.play(action)
+        return reward
