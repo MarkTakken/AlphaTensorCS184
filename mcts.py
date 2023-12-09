@@ -1,4 +1,5 @@
 ## Implements the MCTS using a provided model, returns a set of trajectories // tensors
+## Code originally inspired by AlphaZero General (https://github.com/suragnair/alpha-zero-general)
 
 import numpy as np
 
