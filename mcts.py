@@ -1,5 +1,4 @@
 ## Implements the MCTS using a provided model, returns a set of trajectories // tensors
-## Code originally inspired by AlphaZero General (https://github.com/suragnair/alpha-zero-general)
 
 import numpy as np
 
@@ -21,19 +20,15 @@ class MCTS:
         key = state.to_string()
         nn_state = state.nn_canonical()
         
-        # First time visiting state.  Simply collect value and backprop
+        # First time visiting state.  Collect value, expand tree and backprop
         if not(key in self.N):
             self.N[key] = 1
-            self.Q[key] = self.nn(nn_state)
-            return self.Q[key]
-        
-        # Second time visiting state.  Expand the tree with the sampled states.
-        if not(key in self.A):
-            self.A[key] = self.nn.sample_actions(nn_state, num_samples)  # NB: Assumes nn returns detokenized actions
+            self.Q[key], self.A[key] = self.nn(nn_state)  # Assumes nn returns detokenized actions
             for a in self.A[key].actions:
                 keysa = state.to_string(a)
                 self.Nsa[keysa] = 0
                 self.Qsa[keysa] = float('inf')   # To ensure that we start by choosing each action once
+            return self.Q[key]
         
         # Choose action with highest upper confidence bound
         best_u = -float('inf')

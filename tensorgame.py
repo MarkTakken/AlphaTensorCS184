@@ -20,7 +20,7 @@ class TensorGame:
         raise NotImplementedError  # Still not sure how to best estimate/bound tensor rank
     
     def nn_canonical(self):
-        return self.state
+        return self.state[None]
     
     def to_string(self, action=None):
         if action == None:
