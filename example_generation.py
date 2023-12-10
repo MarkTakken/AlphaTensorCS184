@@ -61,7 +61,7 @@ if __name__ == "__main__":
     S = 3
     r_limit = 80
     factor_dist = {-2: .001, -1: .099, 0: .8, 1: .099, 2: .001}
-    N = 1000
+    N = 100000
     seed = 123456
     SAR_pairs = main(S, r_limit, factor_dist, N, seed=seed)
 
