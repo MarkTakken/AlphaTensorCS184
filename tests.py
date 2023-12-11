@@ -3,14 +3,15 @@ from architecture import *
 S = 3
 c = 64
 d = 10
+batches = 32
 elmnt_range = (-2, 2)
 Nsamples = 5
-state = torch.zeros(1, S, S, S)
-grid = torch.zeros(1, S, S, c)
+state = torch.zeros(batches, S, S, S)
+grid = torch.zeros(batches, S, S, c)
 rod = torch.zeros(S, 2*S, c)
-action = torch.zeros(1, S, dtype=int)
-e = torch.zeros(1, 3*S*S, c)
-tokens = torch.zeros(1, S-1, c)
+action = torch.zeros(batches, S, dtype=int)
+e = torch.zeros(batches, 3*S*S, c)
+tokens = torch.zeros(batches, S-1, c)
 
 attention = Attention(c, c)
 print("Attention test 1:", attention(rod, rod).shape)
@@ -34,13 +35,13 @@ print("Policy test 1:", policy_head.predict_logits(action, e).shape)
 policy_head.train()
 print("Policy test 2:", policy_head(e, g=action).shape)
 policy_head.eval()
-actions, probs = policy_head(e, Nsamples=Nsamples)
+actions, probs = policy_head(e[0:1], Nsamples=Nsamples)
 print("Policy test 3:", actions.shape, probs.tolist())
 
 alphatensor = AlphaTensor184(S, c, d, elmnt_range, S, Nsamples)
 alphatensor.train()
-value, logits = alphatensor(state, g=action)
+value, logits = alphatensor(state[0:1], g=action[0:1])
 print("AlphaTensor test 1:", value.shape, logits.shape)
 alphatensor.eval()
-value, policy = alphatensor(state)
+value, policy = alphatensor(state[0:1])
 print("AlphaTensor test 2:", value.shape, policy.actions.shape, policy.probs.shape)
