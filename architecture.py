@@ -106,21 +106,15 @@ class PolicyHead(nn.Module):
         self.lfinal = nn.Linear(Nfeatures * Nheads, self.Nlogits)
 
     def predict_logits(self, a, e):   # Assumes a is in tokenized, not one-hot form
-        print(f"a = {a.shape}")
-        print(f"e = {e.shape}")
         x = self.tok_embedding(a)
-        print(f"x = {x.shape}")
         positions = torch.arange(a.shape[1]).repeat((a.shape[0], 1)).to(self.device)
         x = x + self.pos_embedding(positions)
-        print(f"x = {x.shape}")
         for i in range(self.Nlayers):
             x = self.ln1[i](x)
             c = self.self_attention[i](x, x)
-            print(f"c = {c.shape}")
             c = self.dropout(c)  # Does not run if in evaluation mode
             x = x + c
             x = self.ln2[i](x)
-            print(f"e = {e.shape}")
             c = self.cross_attention[i](x, e)
             c = self.dropout(c)
             x = x + c

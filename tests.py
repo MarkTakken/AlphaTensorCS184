@@ -1,4 +1,6 @@
 from architecture import *
+from training import *
+from mcts import *
 
 S = 3
 c = 64
@@ -40,8 +42,18 @@ print("Policy test 3:", actions.shape, probs.tolist())
 
 alphatensor = AlphaTensor184(S, c, d, elmnt_range, S, Nsamples)
 alphatensor.train()
-value, logits = alphatensor(state[0:1], g=action[0:1])
+value, logits = alphatensor(state, g=action)
 print("AlphaTensor test 1:", value.shape, logits.shape)
 alphatensor.eval()
 value, policy = alphatensor(state[0:1])
 print("AlphaTensor test 2:", value.shape, policy.actions.shape, policy.probs.shape)
+
+alphatensor.train()
+pred_value, pred_logits = alphatensor(state, g=action)
+true_value = torch.zeros(batches)
+print("Loss test 1:", loss(pred_logits, action, pred_value, true_value))
+
+alphatensor.eval()
+state2 = torch.ones(1, S, S, S)
+mcts = MCTS(state2, alphatensor)
+mcts.search(10, 1)

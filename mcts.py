@@ -52,7 +52,7 @@ class MCTS:
         return new_val + reward
     
     def search(self, num_samples, num_sim):
-        for _ in num_sim:
+        for _ in range(num_sim):
             self.single_search(self.root, num_samples)
     
     # Actions are chosen proportionally to (visit count)^(1/temp)
