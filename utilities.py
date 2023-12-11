@@ -1,5 +1,6 @@
 import torch
-
+from torch.utils.data import Dataset
+import itertools
 
 class Tokenizer():
     def __init__(self, range: tuple[int, int] = (-2, 2)) -> None:
@@ -20,3 +21,30 @@ class Tokenizer():
         b = torch.remainder(token - a, (self.high-self.low + 1)**2) // (self.high-self.low + 1)
         c = (token - a - b) // (self.high-self.low + 1)**2
         return (torch.stack((a,b,c), axis=2) + self.low).int()
+    
+
+class ActionDataset(Dataset):
+    def __init__(self, pregen_files, max_pregen, max_selfplay, selfplay_files = None):
+        self.max_pregen = max_pregen
+        self.max_selfplay = max_selfplay
+        l = [torch.load(file) for file in pregen_files]
+        self.pregen_actions = list(itertools.chain.from_iterable(l))[:self.max_pregen]
+        self.selfplay_actions = []
+        if selfplay_files != None:
+            l = [torch.load(file) for file in selfplay_files]
+            self.selfplay_actions = list(itertools.chain.from_iterable(l))[:self.max_selfplay]
+
+    def __len__(self):
+        return len(self.pregen_actions) + len(self.selfplay_actions)
+
+    def __getitem__(self, idx):
+        if idx < self.max_pregen:
+            return self.pregen_actions[idx]
+        else:
+            return self.selfplay_actions[idx - self.max_pregen]
+        
+    def add_selfplay_actions(self, actions):
+        self.selfplay_actions = self.selfplay_actions + actions
+        if len(self.selfplay_actions) > self.max_selfplay:
+            self.selfplay_actions = self.selfplay_actions[len(self.selfplay_actions) - self.max_selfplay:]
+
