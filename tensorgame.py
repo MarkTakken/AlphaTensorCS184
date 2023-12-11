@@ -1,6 +1,7 @@
 ## Implements the TensorGame logic
 
 import torch
+import numpy as np
 
 class TensorGame:
     def __init__(self, state, max_time):  # state is S x S x S integer tensor

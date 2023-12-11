@@ -11,7 +11,7 @@ from collections import namedtuple
 
 class Attention(nn.Module):
     
-    def __init__(self, c1, c2, causal_mask = False, N_heads = 16, w = 4):
+    def __init__(self, c1, c2, causal_mask = False, N_heads = 16, w = 4, device = torch.device('cuda')):
         super().__init__()
         self.ln1 = nn.LayerNorm([c1])  # [Nx, c1]
         self.ln2 = nn.LayerNorm([c2])  # [Ny, c2]
@@ -21,12 +21,13 @@ class Attention(nn.Module):
         self.l1 = nn.Linear(c1, c1*w)
         self.gelu = nn.GELU()
         self.l2 = nn.Linear(c1*w, c1)
+        self.device = device
 
     def forward(self, x, y):
         xn = self.ln1(x)
         yn = self.ln2(y)
         if self.causal_mask:
-            mask = torch.triu(torch.ones(x.shape[1], y.shape[1], dtype=bool), diagonal=1)
+            mask = torch.triu(torch.ones(x.shape[1], y.shape[1], dtype=bool), diagonal=1).to(self.device)
             attn = self.MAH(xn, yn, yn, attn_mask = mask)[0]
         else:
             attn = self.MAH(xn, yn, yn)[0]
@@ -79,7 +80,7 @@ class Torso(nn.Module):
 class PolicyHead(nn.Module):
     # Currently assumes our implemented tokenization scheme
     # That is, Nstesp = s and Nlogits = range^3
-    def __init__(self, Nsteps, elmnt_range, s, c, Nfeatures = 64, Nheads = 16, Nlayers = 2):
+    def __init__(self, Nsteps, elmnt_range, s, c, Nfeatures = 64, Nheads = 16, Nlayers = 2, device = torch.device('cuda')):
         super().__init__()
         self.Nlayers = Nlayers
         self.Nlogits = (elmnt_range[1]-elmnt_range[0]+1)**3
@@ -87,7 +88,7 @@ class PolicyHead(nn.Module):
         self.Nsteps = Nsteps
         self.Nfeatures = Nfeatures
         self.Nheads = Nheads
-
+        self.device = device
 
         self.tok_embedding = nn.Embedding(self.Nlogits+1, Nfeatures * Nheads)  #In principle more efficient than forming one-hot vectors and matrix multplying
         self.START_TOK = self.Nlogits
@@ -105,16 +106,21 @@ class PolicyHead(nn.Module):
         self.lfinal = nn.Linear(Nfeatures * Nheads, self.Nlogits)
 
     def predict_logits(self, a, e):   # Assumes a is in tokenized, not one-hot form
+        print(f"a = {a.shape}")
+        print(f"e = {e.shape}")
         x = self.tok_embedding(a)
-        positions = torch.arange(a.shape[1]).repeat((a.shape[0], 1))
+        print(f"x = {x.shape}")
+        positions = torch.arange(a.shape[1]).repeat((a.shape[0], 1)).to(self.device)
         x = x + self.pos_embedding(positions)
-
+        print(f"x = {x.shape}")
         for i in range(self.Nlayers):
             x = self.ln1[i](x)
             c = self.self_attention[i](x, x)
+            print(f"c = {c.shape}")
             c = self.dropout(c)  # Does not run if in evaluation mode
             x = x + c
             x = self.ln2[i](x)
+            print(f"e = {e.shape}")
             c = self.cross_attention[i](x, e)
             c = self.dropout(c)
             x = x + c
@@ -130,7 +136,7 @@ class PolicyHead(nn.Module):
             # a = nn.functional.one_hot(g, self.Nlogits).float()
             # o, z = self.predict_logits(a, e)
             # return o, z
-            a = torch.concatenate((torch.tensor(self.START_TOK).repeat(g.shape[0], 1), g[:, :-1]), axis=1)
+            a = torch.concatenate((torch.tensor(self.START_TOK).repeat(g.shape[0], 1), g[:, :-1]), axis=1).to(self.device)
             return self.predict_logits(a, e)
         
         else:
@@ -144,8 +150,8 @@ class PolicyHead(nn.Module):
                 for i in range(self.Nsteps):
                     # encoded = nn.functional.one_hot(a[j, :], self.Nlogits)
                     # o, _ = self.predict_logits(encoded.float(), e)
-                    o = self.predict_logits(torch.tensor([a[j]]), e)
-                    probs = torch.softmax(o[0, i, :], -1)
+                    o = self.predict_logits(torch.tensor([a[j]]).to(self.device), e)
+                    probs = torch.softmax(o[0, i, :], -1).to('cpu')
                     tok = torch.multinomial(probs, num_samples=1).item()
                     a[j].append(tok)
                     p[j] *= probs[tok]
