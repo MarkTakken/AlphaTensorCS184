@@ -51,7 +51,7 @@ print("AlphaTensor test 2:", value.shape, policy.actions.shape, policy.probs.sha
 alphatensor.train()
 pred_value, pred_logits = alphatensor(state, g=action)
 true_value = torch.zeros(batches)
-print("Loss test 1:", loss_fn(pred_logits, action, pred_value, true_value))
+print("Loss test 1:", loss_fn(pred_logits, action, pred_value, true_value, device='cpu'))
 
 alphatensor.eval()
 state2 = torch.ones(1, S, S, S)

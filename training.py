@@ -7,7 +7,7 @@ from torch.optim import Adam
 from architecture import *
 from tqdm import tqdm
 
-def loss_fn(pred_logits, true_tokens, pred_value, true_value, val_weight=1.0, device = 'cuda'):
+def loss_fn(pred_logits, true_tokens, pred_value, true_value, val_weight=1.0, device = 'cuda'):  # Ok to remove 'cuda' parameter?
     policy_loss = nn.functional.cross_entropy(pred_logits.reshape(-1, pred_logits.shape[-1]), true_tokens.flatten().type(torch.LongTensor).to(device))
     value_loss = ((pred_value - true_value)**2).mean()
     return policy_loss + val_weight*value_loss
