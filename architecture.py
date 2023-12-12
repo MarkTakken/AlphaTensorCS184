@@ -36,9 +36,10 @@ class Attention(nn.Module):
         return x
 
 class AttentiveModes(nn.Module):
-    def __init__(self, s, c):
+    def __init__(self, s, c, device = torch.device('cuda')):
         super().__init__()
-        self.attention = Attention(c, c, N_heads = 8)
+        self.device = device
+        self.attention = Attention(c, c, N_heads = 8, device=device)
         self.s = s
         self.c = c
 
@@ -54,10 +55,11 @@ class AttentiveModes(nn.Module):
 
 
 class Torso(nn.Module):
-    def __init__(self, s, c, i):
+    def __init__(self, s, c, i, device = torch.device('cuda')):
         super().__init__()
+        self.device = device
         self.l1 = nn.Linear(s, c)
-        self.attentive_modes = nn.ModuleList([AttentiveModes(s, c) for _ in range(i)])
+        self.attentive_modes = nn.ModuleList([AttentiveModes(s, c, device=device) for _ in range(i)])
         self.s = s
         self.c = c
         self.i = i
@@ -98,9 +100,9 @@ class PolicyHead(nn.Module):
         #   a different one for each layer, but idk really
         self.ln1 = nn.ModuleList([nn.LayerNorm([Nfeatures * Nheads]) for _ in range(Nlayers)])  # [Nsteps, Nfeatures * Nheads]
         self.dropout = nn.Dropout(p=0.1)
-        self.self_attention = nn.ModuleList([Attention(Nfeatures * Nheads, Nfeatures * Nheads, causal_mask=True, N_heads=Nheads) for _ in range(Nlayers)])
+        self.self_attention = nn.ModuleList([Attention(Nfeatures * Nheads, Nfeatures * Nheads, causal_mask=True, N_heads=Nheads, device=device) for _ in range(Nlayers)])
         self.ln2 = nn.ModuleList([nn.LayerNorm([Nfeatures * Nheads]) for _ in range(Nlayers)])
-        self.cross_attention = nn.ModuleList([Attention(Nfeatures * Nheads, c, N_heads=Nheads) for _ in range(Nlayers)])
+        self.cross_attention = nn.ModuleList([Attention(Nfeatures * Nheads, c, N_heads=Nheads, device=device) for _ in range(Nlayers)])
         
         self.relu = nn.ReLU()
         self.lfinal = nn.Linear(Nfeatures * Nheads, self.Nlogits)
@@ -352,7 +354,7 @@ class ValueHead(nn.Module):
 ## Also, need to be careful with setting up training vs acting
 
 class AlphaTensor184(nn.Module):
-    def __init__(self, s, c, d, elmnt_range, Nsteps, Nsamples, N_policy_features = 48, N_policy_heads = 12, torso_iterations = 8):
+    def __init__(self, s, c, d, elmnt_range, Nsteps, Nsamples, N_policy_features = 48, N_policy_heads = 12, torso_iterations = 8, device = torch.device('cuda')):
         super().__init__()
         self.s = s
         self.c = c
@@ -360,9 +362,9 @@ class AlphaTensor184(nn.Module):
         self.Nsteps = Nsteps
         self.Nsamples = Nsamples
         
-        self.torso = Torso(s, c, torso_iterations)
+        self.torso = Torso(s, c, torso_iterations, device=device)
         self.value_head = ValueHead(c, d) 
-        self.policy_head = PolicyHead(Nsteps, elmnt_range, s, c, Nfeatures=N_policy_features, Nheads=N_policy_heads)
+        self.policy_head = PolicyHead(Nsteps, elmnt_range, s, c, Nfeatures=N_policy_features, Nheads=N_policy_heads,  device=device)
     
     def forward(self, x, g=None):
         e = self.torso(x)
