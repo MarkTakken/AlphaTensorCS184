@@ -1,24 +1,22 @@
 ## Implements the TensorGame logic
 
 import torch
-import numpy as np
 
 class TensorGame:
-    def __init__(self, state, max_time):  # state is S x S x S integer tensor
+    def __init__(self, state, max_time, time=0):  # state is S x S x S integer tensor
         self.state = state
         self.max_time = max_time
-        self.time = 0
+        self.time = time
     
     def play(self, action):  # action is 3 x S tensor
-        newstate = torch.einsum('i,j,k -> ijk', action[0], action[1], action[2])
-        self.time += 1
-        return (newstate, -1.0)
+        newstate = self.state - torch.einsum('i,j,k -> ijk', action[0], action[1], action[2])
+        return (TensorGame(newstate, self.max_time, self.time+1), -1.0)
 
     def done(self):
-        return self.time == self.max_time or np.all(self.state == 0)
+        return self.time == self.max_time or torch.all(self.state == 0)
     
     def terminal_reward(self):
-        raise NotImplementedError  # Still not sure how to best estimate/bound tensor rank
+        return 0.0   # NOT YET IMPLEMENTED
     
     def nn_canonical(self):
         return self.state[None]

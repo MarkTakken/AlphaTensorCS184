@@ -1,6 +1,7 @@
 from architecture import *
 from training import *
 from mcts import *
+from tensorgame import *
 
 S = 3
 c = 64
@@ -54,6 +55,14 @@ true_value = torch.zeros(batches)
 print("Loss test 1:", loss_fn(pred_logits, action, pred_value, true_value, device='cpu'))
 
 alphatensor.eval()
-state2 = torch.ones(1, S, S, S)
+state2 = TensorGame(torch.ones(S, S, S), 5)
 mcts = MCTS(state2, alphatensor)
-mcts.search(10, 1)
+mcts.search(10, 100)
+print("Search test 1: Done")
+state3 = TensorGame(torch.ones(S, S, S), 50)
+mcts = MCTS(state3, alphatensor)
+mcts.search(10, 100)
+print("Search test 2: Done")
+print("Search test 3:", mcts.get_action_probs(0.9))
+mcts.search_and_play(10, 1, 0.9)
+print("Search test 4: Done")

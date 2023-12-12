@@ -1,6 +1,6 @@
 ## Implements the MCTS using a provided model, returns a set of trajectories // tensors
 
-import numpy as np
+import torch
 
 class MCTS:
     def __init__(self, root, nn, cpuct=1.0):
@@ -27,15 +27,16 @@ class MCTS:
             for a in self.A[key].actions:
                 keysa = state.to_string(a)
                 self.Nsa[keysa] = 0
-                self.Qsa[keysa] = float('inf')   # To ensure that we start by choosing each action once
+                self.Qsa[keysa] = 0.0
             return self.Q[key]
         
         # Choose action with highest upper confidence bound
         best_u = -float('inf')
         best_a = None
         for (a,p) in zip(*self.A[key]):
-            keysa = state.to_string()
-            U = self.Qsa[keysa] + self.cpuct * p * np.log(self.N[key])/np.sqrt(self.Nsa[keysa]+1)
+            keysa = state.to_string(a)
+            # Intentional initial division by 0 to ensure each action is chosen once
+            U = self.Qsa[keysa] + self.cpuct * p * torch.log(torch.tensor(self.N[key]+1))/torch.sqrt(torch.tensor(self.Nsa[keysa]))
             if U > best_u:
                 best_u = U
                 best_a = a
@@ -59,13 +60,13 @@ class MCTS:
     def get_action_probs(self, temp=1.0):
         key = self.root.to_string()
         if temp > 0:
-            probs = []
+            probs = torch.zeros(len(self.A[key].actions))
             s = 0
-            for a in self.A[key].actions:
-                count = self.Nsa[self.root.to_string(a)]**(1/temp)
-                s += count
-                probs.append(count)
-            return np.array(probs/s)
+            for (i,a) in enumerate(self.A[key].actions):
+                weight = self.Nsa[self.root.to_string(a)]**(1/temp)
+                s += weight
+                probs[i] = weight
+            return probs/s
         
         # Handle temp = 0 case separately, which is just argmax
         else:
@@ -75,14 +76,15 @@ class MCTS:
                 if count > best_n:
                     best_n = count
                     best_i = i
-            probs = np.zeros(self.A[key].actions)
+            probs = torch.zeros(len(self.A[key].actions))
             probs[best_i] = 1.0
             return probs
     
     def choose_move(self, temp=1.0):
         probs = self.get_action_probs(temp=temp)
-        actions = self.A[self.root].actions
-        return np.choice(actions, p=probs)
+        actions = self.A[self.root.to_string()].actions
+        ind = torch.multinomial(probs, 1).item()
+        return actions[ind]
     
     def search_and_play(self, num_samples, num_sim, temp=1.0):
         self.search(num_samples, num_sim)
