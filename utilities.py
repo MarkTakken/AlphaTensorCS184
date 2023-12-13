@@ -48,3 +48,23 @@ class ActionDataset(Dataset):
         if len(self.selfplay_actions) > self.max_selfplay:
             self.selfplay_actions = self.selfplay_actions[len(self.selfplay_actions) - self.max_selfplay:]
 
+def change_of_basis(S, cob_entries, cob_probs):
+    P = torch.zeros(S, S, dtype=int)
+    L = torch.zeros(S, S, dtype=int)
+    diag_entries = torch.tensor([-1,1])
+    diag_unif = torch.tensor([0.5, 0.5])
+    diag_range = torch.arange(S)
+    diag_elmnts = diag_entries[torch.multinomial(diag_unif, num_samples=2*S, replacement=True)]
+    P[diag_range, diag_range] = diag_elmnts[:S]
+    L[diag_range, diag_range] = diag_elmnts[S:]
+    cob_elmnts = cob_entries[torch.multinomial(cob_probs, num_samples=S*S, replacement=True)].reshape(S,S)
+    P += torch.triu(cob_elmnts, diagonal=1)
+    L += torch.tril(cob_elmnts, diagonal=-1)
+    return P @ L
+
+def apply_COB(state, S, cob_entries, cob_probs):
+    M = change_of_basis(S, cob_entries, cob_probs)
+    state = torch.einsum('ijk, ia -> ajk', state, M)
+    state = torch.einsum('ijk, ja -> iak', state, M)
+    state = torch.einsum('ijk, ka -> ija', state, M)
+    return state
