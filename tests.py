@@ -7,7 +7,7 @@ from selfplay import *
 
 S = 4
 c = 64
-d = 10
+d = 48
 batches = 32
 elmnt_range = (-2, 2)
 Nsamples = 5
@@ -84,6 +84,6 @@ if False:
     print("COB Test 2:\n", newstate)
     print("COB Test 3:\n", invert_COB(newstate, M))
 
-alphatensor = AlphaTensor184(S, c, d, elmnt_range, S, Nsamples, device='cpu')
+alphatensor = AlphaTensor184(S, c, d, elmnt_range, S, Nsamples, torso_iterations=5, device='cpu')
 alphatensor.eval()
-print(self_play(alphatensor, S, canonical, 1, device='cpu', num_samples=2, num_sim=8, max_actions=2))
+print(self_play(alphatensor, S, canonical, 20, device='cpu', num_samples=10, num_sim=16, max_actions=10))
