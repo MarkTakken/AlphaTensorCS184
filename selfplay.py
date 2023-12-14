@@ -20,7 +20,7 @@ canonical[2, 1, 3] = 1
 canonical[3, 2, 3] = 1
 canonical[3, 3, 3] = 1
 
-def self_play(model, S: int, canonical, n_plays, num_sim = 10, identifier=1, max_actions = 10,
+def self_play(model, S: int,  n_plays, canonical = canonical, num_sim = 10, identifier=1, max_actions = 10,
               cob_entries = torch.tensor([-1, 0, 1]), cob_probs = torch.tensor([.05, .9, .05]), device='cuda'):
     model.eval()
 
