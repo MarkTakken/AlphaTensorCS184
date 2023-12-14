@@ -76,5 +76,8 @@ if False:
     mcts.search_and_play(10, 1, 0.9)
     print("Search test 4: Done")
 
-print("COB Test 1:\n", change_of_basis(4, torch.tensor([-1,0,1]), torch.tensor([0.1,0.8,0.1])))
-print("COB Test 2:\n", apply_COB(torch.ones(4,4,4,dtype=int), 4, torch.tensor([-1,0,1]), torch.tensor([0.1,0.8,0.1])))
+M = change_of_basis(4, torch.tensor([-2,-1,0,1,2]), torch.tensor([0.1,0.1,0.6,0.1,0.1]))
+print("COB Test 1:\n", M)
+newstate = apply_COB(torch.ones(4,4,4,dtype=int),M)
+print("COB Test 2:\n", newstate)
+print("COB Test 3:\n", invert_COB(newstate, M))

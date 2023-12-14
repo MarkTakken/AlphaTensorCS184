@@ -62,9 +62,11 @@ def change_of_basis(S, cob_entries, cob_probs):
     L += torch.tril(cob_elmnts, diagonal=-1)
     return P @ L
 
-def apply_COB(state, S, cob_entries, cob_probs):
-    M = change_of_basis(S, cob_entries, cob_probs)
+def apply_COB(state, M):
     state = torch.einsum('ijk, ia -> ajk', state, M)
     state = torch.einsum('ijk, ja -> iak', state, M)
     state = torch.einsum('ijk, ka -> ija', state, M)
     return state
+
+def invert_COB(state, M):
+    return apply_COB(state, torch.linalg.inv(M.float()).long())

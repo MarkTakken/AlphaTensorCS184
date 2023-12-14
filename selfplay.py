@@ -3,7 +3,7 @@ from architecture import *
 from mcts import *
 from utilities import *
 
-def self_play(model):
+def self_play(model, num_games, cob_entries, cob_probs):
     model.eval()
 
     # Build a set of target tensors
