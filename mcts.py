@@ -3,10 +3,11 @@
 import torch
 
 class MCTS:
-    def __init__(self, root, nn, cpuct=1.0):
+    def __init__(self, root, nn, cpuct=1.0, device='cuda'):
         self.root = root
         self.nn = nn
         self.cpuct = cpuct
+        self.device = device
         self.A = dict()         # state.to_string() -> sampled actions and probabilities
         self.N = dict()         # state.to_string() -> visit count
         self.Nsa = dict()       # state.to_string(action) -> visit count
@@ -23,7 +24,7 @@ class MCTS:
         # First time visiting state.  Collect value, expand tree and backprop
         if not(key in self.N):
             self.N[key] = 1
-            self.Q[key], self.A[key] = self.nn(nn_state)  # Assumes nn returns detokenized actions
+            self.Q[key], self.A[key] = self.nn(nn_state.to(self.device))  # Assumes nn returns detokenized actions
             for a in self.A[key].actions:
                 keysa = state.to_string(a)
                 self.Nsa[keysa] = 0
@@ -90,4 +91,4 @@ class MCTS:
         self.search(num_samples, num_sim)
         action = self.choose_move(temp=temp)
         self.root, reward = self.root.play(action)
-        return reward
+        return reward, action

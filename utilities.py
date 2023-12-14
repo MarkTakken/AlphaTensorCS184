@@ -64,7 +64,7 @@ def change_of_basis(S, cob_entries, cob_probs):
 
 def apply_COB(state, S, cob_entries, cob_probs):
     M = change_of_basis(S, cob_entries, cob_probs)
-    state = torch.einsum('ijk, ia -> ajk', state, M)
-    state = torch.einsum('ijk, ja -> iak', state, M)
-    state = torch.einsum('ijk, ka -> ija', state, M)
-    return state
+    state = torch.einsum('ijk, ia -> ajk', state, M.float())
+    state = torch.einsum('ijk, ja -> iak', state, M.float())
+    state = torch.einsum('ijk, ka -> ija', state, M.float())
+    return state, M
