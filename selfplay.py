@@ -10,7 +10,7 @@ from tqdm import tqdm
 # Probably more convenient for state to be a tensor of ints
 #       so that we don't risk floating point inaccuracies when
 #       checking whether the state equals zero
-canonical = torch.zeros(4, 4, 4, dtype=int)
+canonical = torch.zeros(4, 4, 4, dtype=torch.long)
 canonical[0, 0, 0] = 1
 canonical[0, 1, 1] = 1
 canonical[1, 2, 0] = 1
@@ -51,7 +51,7 @@ def self_play(model, S: int, canonical, n_plays, num_samples = 16, num_sim = 16,
         rewards = []
         states = []
         actions = []
-        for i in range(max_actions):
+        for _ in range(max_actions):
             states.append(mcts.root.state)
             # search_and_play already calls search internally
             r, action = mcts.search_and_play(num_samples, num_sim)

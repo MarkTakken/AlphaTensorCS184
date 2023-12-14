@@ -14,13 +14,13 @@ class Tokenizer():
         a = torch.remainder(token, (self.high-self.low) + 1)
         b = torch.remainder(token - a, (self.high-self.low + 1)**2) // (self.high-self.low + 1)
         c = (token - a - b) // (self.high-self.low + 1)**2
-        return (torch.column_stack((a, b, c)) + self.low).int()
+        return (torch.column_stack((a, b, c)) + self.low).long()  # Changed to long for compatibility
     
     def batch_detokenize(self, token: torch.Tensor) -> torch.Tensor:
         a = torch.remainder(token, (self.high-self.low) + 1)
         b = torch.remainder(token - a, (self.high-self.low + 1)**2) // (self.high-self.low + 1)
         c = (token - a - b) // (self.high-self.low + 1)**2
-        return (torch.stack((a,b,c), axis=1) + self.low).int()
+        return (torch.stack((a,b,c), axis=1) + self.low).long()
     
 
 class ActionDataset(Dataset):
