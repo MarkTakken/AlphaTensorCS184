@@ -62,7 +62,7 @@ if __name__ == "__main__":
     r_limit = 16
     factor_dist = {-2: .001, -1: .099, 0: .8, 1: .099, 2: .001}
     N = 100000
-    seed = 4321
+    seed = 3
     SAR_pairs = main(S, r_limit, factor_dist, N, seed=seed)
 
     torch.save(SAR_pairs, f"data/SAR_pairs_{S}_{N}_{seed}.pt")

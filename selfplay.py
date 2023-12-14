@@ -31,6 +31,8 @@ def self_play(model, S: int, canonical, n_plays, num_samples = 16, num_sim = 16,
     successful_trajectories = [] # Tuples of (Initial State, cob, [Actions], Final State)
     SAR_pairs = [] # Tuples of (State, Action, Reward)
 
+    total_reward = 0
+
     for i, target in tqdm(enumerate(targets)):
         ## Need to expand this
         root = TensorGame(target, num_samples, num_sim)
@@ -57,8 +59,12 @@ def self_play(model, S: int, canonical, n_plays, num_samples = 16, num_sim = 16,
 
         SAR_pairs += SAR
 
+        total_reward += reward
+
         if final_state == torch.from_numpy(np.zeros((S, S, S))):
             successful_trajectories.append((target, bases_changes[i], actions, final_state))
     
     torch.save(successful_trajectories, f"data/successful_trajectories_{identifier}.pt")
-    torch.save(SAR_pairs, f"data/SAR_pairs_{identifier}.pt")
+    torch.save(SAR_pairs, f"data/SAR_pairs_sp_{identifier}.pt")
+
+    return successful_trajectories, total_reward / n_plays
