@@ -11,6 +11,9 @@ class TensorGame:
     def play(self, action):  # action is 3 x S tensor
         newstate = self.state - torch.einsum('i,j,k -> ijk', action[0], action[1], action[2])
         return (TensorGame(newstate, self.max_time, self.time+1), -1.0)
+    
+    def is_zero(self):
+        return torch.all(self.state == 0)
 
     def done(self):
         return self.time == self.max_time or torch.all(self.state == 0)
@@ -19,7 +22,7 @@ class TensorGame:
         return 0.0   # NOT YET IMPLEMENTED
     
     def nn_canonical(self):
-        return self.state[None]
+        return self.state.float()[None]
     
     def to_string(self, action=None):
         if action == None:
