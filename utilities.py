@@ -32,7 +32,7 @@ class ActionDataset(Dataset):
         self.selfplay_actions = []
         if selfplay_files != None:
             l = [torch.load(file) for file in selfplay_files]
-            self.selfplay_actions = list(itertools.chain.from_iterable(l))[:self.max_selfplay]
+            self.selfplay_actions = list(itertools.chain.from_iterable(l))[len(self.selfplay_actions) - self.max_selfplay:]
 
     def __len__(self):
         return len(self.pregen_actions) + len(self.selfplay_actions)
