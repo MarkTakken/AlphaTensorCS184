@@ -19,7 +19,8 @@ class TensorGame:
         return self.time == self.max_time or torch.all(self.state == 0)
     
     def terminal_reward(self):
-        return 0.0   # NOT YET IMPLEMENTED
+        n = self.state.shape[0]
+        return min((self.state > 0).sum().item(), n*n - n - 1)
     
     def nn_canonical(self):
         return self.state.float()[None]
