@@ -24,7 +24,7 @@ class Tokenizer():
     
 
 class ActionDataset(Dataset):
-    def __init__(self, pregen_files, max_pregen, max_selfplay, selfplay_files = None):
+    def __init__(self, pregen_files, max_pregen, max_selfplay, selfplay_multiplier = 3, selfplay_files = None):
         self.max_pregen = max_pregen
         self.max_selfplay = max_selfplay
         l = [torch.load(file) for file in pregen_files]
@@ -32,7 +32,7 @@ class ActionDataset(Dataset):
         self.selfplay_actions = []
         if selfplay_files != None:
             l = [torch.load(file) for file in selfplay_files]
-            self.selfplay_actions = list(itertools.chain.from_iterable(l))
+            self.selfplay_actions = list(itertools.chain.from_iterable(l)) * selfplay_multiplier
             if len(self.selfplay_actions) > self.max_selfplay:
                 self.selfplay_actions = self.selfplay_actions[len(self.selfplay_actions) - self.max_selfplay:]
 

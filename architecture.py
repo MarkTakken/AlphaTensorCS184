@@ -126,7 +126,7 @@ class PolicyHead(nn.Module):
     def forward(self, e, **kwargs):
         if self.training:
             g = kwargs['g']
-            a = torch.concatenate((torch.tensor(self.START_TOK).repeat(g.shape[0], 1), g[:, :-1]), axis=1).to(self.device)
+            a = torch.concatenate((torch.tensor(self.START_TOK).repeat(g.shape[0], 1).to(self.device), g[:, :-1].to(self.device)), axis=1).to(self.device)
             return self.predict_logits(a, e)
         
         else:
