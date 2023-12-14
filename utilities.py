@@ -14,13 +14,13 @@ class Tokenizer():
         a = torch.remainder(token, (self.high-self.low) + 1)
         b = torch.remainder(token - a, (self.high-self.low + 1)**2) // (self.high-self.low + 1)
         c = (token - a - b) // (self.high-self.low + 1)**2
-        return (torch.column_stack((a, b, c)) + self.low).int()
+        return (torch.column_stack((a, b, c)) + self.low).long()  # Changed to long for compatibility
     
     def batch_detokenize(self, token: torch.Tensor) -> torch.Tensor:
         a = torch.remainder(token, (self.high-self.low) + 1)
         b = torch.remainder(token - a, (self.high-self.low + 1)**2) // (self.high-self.low + 1)
         c = (token - a - b) // (self.high-self.low + 1)**2
-        return (torch.stack((a,b,c), axis=2) + self.low).int()
+        return (torch.stack((a,b,c), axis=1) + self.low).long()
     
 
 class ActionDataset(Dataset):
@@ -32,7 +32,9 @@ class ActionDataset(Dataset):
         self.selfplay_actions = []
         if selfplay_files != None:
             l = [torch.load(file) for file in selfplay_files]
-            self.selfplay_actions = list(itertools.chain.from_iterable(l))[len(self.selfplay_actions) - self.max_selfplay:]
+            self.selfplay_actions = list(itertools.chain.from_iterable(l))
+            if len(self.selfplay_actions) > self.max_selfplay:
+                self.selfplay_actions = self.selfplay_actions[len(self.selfplay_actions) - self.max_selfplay:]
 
     def __len__(self):
         return len(self.pregen_actions) + len(self.selfplay_actions)
@@ -68,5 +70,4 @@ def apply_COB(state, M):
     state = torch.einsum('ijk, ka -> ija', state, M)
     return state
 
-def invert_COB(state, M):
-    return apply_COB(state, torch.linalg.inv(M.float()).long())
+# Turns out we don't need the invert_COB function

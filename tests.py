@@ -3,6 +3,7 @@ from training import *
 from mcts import *
 from tensorgame import *
 from utilities import *
+from selfplay import *
 
 S = 4
 c = 64
@@ -76,8 +77,13 @@ if False:
     mcts.search_and_play(10, 1, 0.9)
     print("Search test 4: Done")
 
-M = change_of_basis(4, torch.tensor([-2,-1,0,1,2]), torch.tensor([0.1,0.1,0.6,0.1,0.1]))
-print("COB Test 1:\n", M)
-newstate = apply_COB(torch.ones(4,4,4,dtype=int),M)
-print("COB Test 2:\n", newstate)
-print("COB Test 3:\n", invert_COB(newstate, M))
+if False:
+    M = change_of_basis(4, torch.tensor([-2,-1,0,1,2]), torch.tensor([0.1,0.1,0.6,0.1,0.1]))
+    print("COB Test 1:\n", M)
+    newstate = apply_COB(torch.ones(4,4,4,dtype=int),M)
+    print("COB Test 2:\n", newstate)
+    print("COB Test 3:\n", invert_COB(newstate, M))
+
+alphatensor = AlphaTensor184(S, c, d, elmnt_range, S, Nsamples, device='cpu')
+alphatensor.eval()
+print(self_play(alphatensor, S, canonical, 1, device='cpu', num_samples=2, num_sim=8, max_actions=2))
