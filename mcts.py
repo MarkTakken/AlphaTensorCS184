@@ -14,7 +14,7 @@ class MCTS:
         self.Q = dict()         # state.to_string() -> state value (value func)
         self.Qsa = dict()       # state.to_string() -> action value (Q func)
     
-    def single_search(self, state, num_samples):
+    def single_search(self, state):
         if state.done():
             return state.terminal_reward()
         
@@ -45,7 +45,7 @@ class MCTS:
         # Play the chosen action, perform a search on the new state and update the values and visit counts accordingly
         # Return the value of the current state up the branch
         newstate, reward = state.play(best_a)
-        new_val = self.single_search(newstate, num_samples)
+        new_val = self.single_search(newstate)
         self.Q[key] = (self.Q[key]*self.N[key] + new_val + reward)/(self.N[key]+1)
         self.N[key] += 1
         keysa = state.to_string(best_a)
@@ -53,9 +53,9 @@ class MCTS:
         self.Nsa[keysa] += 1
         return new_val + reward
     
-    def search(self, num_samples, num_sim):
+    def search(self, num_sim):
         for _ in range(num_sim):
-            self.single_search(self.root, num_samples)
+            self.single_search(self.root)
     
     # Actions are chosen proportionally to (visit count)^(1/temp)
     def get_action_probs(self, temp=1.0):
@@ -87,8 +87,8 @@ class MCTS:
         ind = torch.multinomial(probs, 1).item()
         return actions[ind]
     
-    def search_and_play(self, num_samples, num_sim, temp=1.0):
-        self.search(num_samples, num_sim)
+    def search_and_play(self, num_sim, temp=1.0):
+        self.search(num_sim)
         action = self.choose_move(temp=temp)
         self.root, reward = self.root.play(action)
         return reward, action
