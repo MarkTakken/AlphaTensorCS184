@@ -20,7 +20,7 @@ canonical[2, 1, 3] = 1
 canonical[3, 2, 3] = 1
 canonical[3, 3, 3] = 1
 
-def self_play(model, S: int, canonical, n_plays, num_samples = 16, num_sim = 16, identifier=1, max_actions = 16,
+def self_play(model, S: int, canonical, n_plays, num_samples = 16, num_sim = 16, identifier=1, max_actions = 12,
               cob_entries = torch.tensor([-1, 0, 1]), cob_probs = torch.tensor([.05, .9, .05]), device='cuda'):
     model.eval()
 
@@ -42,7 +42,7 @@ def self_play(model, S: int, canonical, n_plays, num_samples = 16, num_sim = 16,
 
     for i, target in tqdm(enumerate(targets)):
         ## Need to expand this
-        # Avoding separate root = TensorGame(target, max_actions)
+        # Avoding separate root = TensorGame(target, max_actions'')
         #     for clarity: We want to work with mcts.root, which is
         #     updated with mcts.search_and_play, rather than root.
         mcts = MCTS(TensorGame(target, max_actions), model, device=device)
