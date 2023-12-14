@@ -86,4 +86,4 @@ if False:
 
 alphatensor = AlphaTensor184(S, c, d, elmnt_range, S, Nsamples, torso_iterations=5, device='cpu')
 alphatensor.eval()
-print(self_play(alphatensor, S, canonical, 20, device='cpu', num_samples=10, num_sim=16, max_actions=10))
+print(self_play(alphatensor, S, 20, device='cpu', num_sim=16, max_actions=10))
