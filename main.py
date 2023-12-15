@@ -77,13 +77,14 @@ def im_based_training(S = 4, epochs = (10, 10), model_path=None, num_sim = 50, n
 
     if model_path != None:
         model.load_state_dict(torch.load(model_path))
+        print(f"Loaded model from {model_path}")
     model.train()
 
     # Train
     meta_iterations, iterations = epochs
 
     datafiles = [f"data/SAR_pairs_4_100000_{i}.pt" for i in range(1, 2)]
-    dataset = ActionDataset(datafiles, 750000, 100000)
+    dataset = ActionDataset(datafiles, 1000000, 100000)
     all_losses = []
     pol_losses = []
     val_losses = []
@@ -109,4 +110,4 @@ def im_based_training(S = 4, epochs = (10, 10), model_path=None, num_sim = 50, n
     torch.save(model.state_dict(), "models/model_{id}_f.pt")
 
 if __name__ == "__main__":
-    im_based_training(model_path=None, id=31)
+    im_based_training(model_path="models/model_31_4.pt", epochs=(5, 5), lr=.0001, id=32)

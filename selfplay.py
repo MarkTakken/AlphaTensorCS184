@@ -19,7 +19,7 @@ canonical[1, 2, 0] = 1
 canonical[1, 3, 1] = 1
 canonical[2, 0, 2] = 1
 canonical[2, 1, 3] = 1
-canonical[3, 2, 3] = 1
+canonical[3, 2, 2] = 1
 canonical[3, 3, 3] = 1
 
 def self_play(model, S: int, n_plays, canonical = canonical, num_sim = 10, max_actions = 10,
