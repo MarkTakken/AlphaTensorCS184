@@ -4,6 +4,7 @@ from mcts import *
 from tensorgame import *
 from utilities import *
 from selfplay import *
+from time import time
 
 S = 4
 c = 64
