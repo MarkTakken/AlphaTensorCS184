@@ -57,7 +57,8 @@ def train_selfplay_loop(iterations = 10, S = 4, model_path = None, num_sim = 2,
         model.eval()
         # Self-play
         print(f"Iteration {i}: Self-Playing")
-        successes, avg_reward = self_play(model, S, n_plays = n_plays, num_sim = num_sim, identifier=i, max_actions = max_actions)
+        with torch.no_grad():
+            successes, avg_reward = self_play(model, S, n_plays = n_plays, num_sim = num_sim, identifier=i, max_actions = max_actions)
 
         print(f"Successful trajectories: {len(successes)}")
         print(f"Avg Reward: {avg_reward}")
