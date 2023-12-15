@@ -15,7 +15,7 @@ def loss_fn(pred_logits, true_tokens, pred_value, true_value, val_weight=.33, de
 def loss_reporter(pred_logits, true_tokens, pred_value, true_value, val_weight=1.0, device = 'cuda'):
     policy_loss = nn.functional.cross_entropy(pred_logits.reshape(-1, pred_logits.shape[-1]), true_tokens.flatten().type(torch.LongTensor).to(device))
     value_loss = ((pred_value - true_value)**2).mean()
-    return policy_loss, value_loss
+    return policy_loss.to('cpu').item(), value_loss.to('cpu').item()
 
 def train(model, dataset, epochs, batch_size = 1024, lr=0.001, val_weight = .33, device = 'cuda'):
     model.train()
