@@ -6,6 +6,8 @@ from tensorgame import *
 import torch
 import numpy as np
 from tqdm import tqdm
+from multiprocessing import Pool
+from functools import partial
 
 # Probably more convenient for state to be a tensor of ints
 #       so that we don't risk floating point inaccuracies when
@@ -20,8 +22,8 @@ canonical[2, 1, 3] = 1
 canonical[3, 2, 3] = 1
 canonical[3, 3, 3] = 1
 
-def self_play(model, S: int, n_plays, canonical = canonical, num_sim = 10, identifier=1, max_actions = 10,
-              cob_entries = torch.tensor([-1, 0, 1]), cob_probs = torch.tensor([.05, .9, .05]), device='cuda'):
+def self_play(model, S: int, n_plays, canonical = canonical, num_sim = 10, max_actions = 10,
+              cob_entries = torch.tensor([-1, 0, 1]), cob_probs = torch.tensor([.05, .9, .05]), identifier=1, device='cuda'):
     model.eval()
 
     # Build a set of target tensors
@@ -87,3 +89,16 @@ def self_play(model, S: int, n_plays, canonical = canonical, num_sim = 10, ident
     torch.save(SAR_pairs, f"data/SAR_pairs_sp_{identifier}.pt")
 
     return successful_trajectories, total_reward / n_plays
+
+def self_play2(index, model, S: int, n_plays, canonical = canonical, num_sim = 10, max_actions = 10,
+              cob_entries = torch.tensor([-1, 0, 1]), cob_probs = torch.tensor([.05, .9, .05]), device='cuda'):
+    return self_play(model, S, n_plays, canonical=canonical, num_sim=num_sim, max_actions=10,
+                     cob_entries=cob_entries, cob_probs=cob_probs, identifier=index, device=device)
+
+def self_play_parallel(procs, model, S: int, n_plays, canonical = canonical, num_sim = 10, identifier=1, max_actions = 10,
+              cob_entries = torch.tensor([-1, 0, 1]), cob_probs = torch.tensor([.05, .9, .05]), device='cuda'):
+    
+    with Pool(procs) as p:
+        return p.map(partial(self_play2, model=model, S=S, n_plays=n_plays, canonical=canonical, num_sim=num_sim,
+                             max_actions = max_actions, cob_entries=cob_entries, cob_probs=cob_probs, device=device),
+                             range(procs))
