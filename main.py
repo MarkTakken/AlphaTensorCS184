@@ -92,13 +92,15 @@ def im_based_training(S = 4, epochs = (10, 10), model_path=None, num_sim = 50, n
         all_losses += losses
         pol_losses += pl
         val_losses += vl
-
-    print(f"All Losses: {all_losses}")
+        print(f"All Losses: {all_losses}")
+        print(f"Policy Losses: {pol_losses}")
+        print(f"Value Losses: {val_losses}")
 
     print(f"Beginning Evaluation")
     model.eval()
     # Self-play
-    successes, avg_reward = self_play(model, S, n_plays = n_plays, num_sim = num_sim, identifier=1)
+    with torch.no_grad():
+        successes, avg_reward = self_play(model, S, n_plays = n_plays, num_sim = num_sim, identifier=1)
 
     print(f"Successful trajectories: {len(successes)}")
     print(f"Avg Reward: {avg_reward}")
@@ -106,4 +108,4 @@ def im_based_training(S = 4, epochs = (10, 10), model_path=None, num_sim = 50, n
     torch.save(model.state_dict(), "models/model_{id}_f.pt")
 
 if __name__ == "__main__":
-    im_based_training(model_path='models/model_4.pt')
+    im_based_training(model_path=None, id=31)
