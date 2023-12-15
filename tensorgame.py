@@ -20,7 +20,7 @@ class TensorGame:
     
     def terminal_reward(self):
         n = self.state.shape[0]
-        return min((self.state > 0).sum().item(), n*n - n - 1)
+        return -min((self.state > 0).sum().item(), n*n - n - 1)
     
     def nn_canonical(self):
         return self.state.float()[None]

@@ -103,3 +103,8 @@ def self_play_parallel(procs, model, S: int, n_plays, canonical = canonical, num
         return p.map(partial(self_play2, model=model, S=S, n_plays=n_plays, canonical=canonical, num_sim=num_sim,
                              max_actions = max_actions, cob_entries=cob_entries, cob_probs=cob_probs, device=device),
                              range(procs))
+
+if __name__ == '__main__':
+    alphatensor = AlphaTensor184(s = 4, c = 48, d = 48, elmnt_range=(-2,2), N_policy_features=48, N_policy_heads=12, Nsteps=4, Nsamples=10, torso_iterations=4, device='cpu')
+    alphatensor.load_state_dict(torch.load('models/model_3_2.pt', map_location='cpu'))
+    self_play_parallel(2, alphatensor, 4, 30, num_sim=50, device='cpu')
