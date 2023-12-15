@@ -10,7 +10,7 @@ c = 64
 d = 48
 batches = 32
 elmnt_range = (-2, 2)
-Nsamples = 5
+Nsamples = 10
 state = torch.zeros(batches, S, S, S)
 grid = torch.zeros(batches, S, S, c)
 rod = torch.zeros(S, 2*S, c)
@@ -84,6 +84,7 @@ if False:
     print("COB Test 2:\n", newstate)
     print("COB Test 3:\n", invert_COB(newstate, M))
 
-alphatensor = AlphaTensor184(S, c, d, elmnt_range, S, Nsamples, torso_iterations=5, device='cpu')
+alphatensor = AlphaTensor184(S, c, d, elmnt_range, S, Nsamples, torso_iterations=5, device='cuda')
+alphatensor.to('cuda')
 alphatensor.eval()
-print(self_play(alphatensor, S, 20, device='cpu', num_sim=16, max_actions=10))
+print(self_play(alphatensor, S, 20, device='cuda', num_sim=16, max_actions=10))
