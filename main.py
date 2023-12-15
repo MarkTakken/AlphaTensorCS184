@@ -66,12 +66,12 @@ def train_selfplay_loop(iterations = 10, S = 4, model_path = None, num_sim = 2,
         collect()
 
 
-def im_based_training(S = 4, epochs = (20, 5), model_path=None, num_sim = 50, n_plays = 20, lr = 0.04):
+def im_based_training(S = 4, epochs = (10, 10), model_path=None, num_sim = 50, n_plays = 20, lr = 0.001, id = 3):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
     # Either initialize or load the model
-    model = AlphaTensor184(s = 4, c = 48, d = 48, elmnt_range=(-2, 2), N_policy_features=32, N_policy_heads=12, Nsteps=4, Nsamples=24, torso_iterations=4)
+    model = AlphaTensor184(s = 4, c = 48, d = 48, elmnt_range=(-2, 2), N_policy_features=48, N_policy_heads=12, Nsteps=4, Nsamples=24, torso_iterations=4)
     model.to(device)
 
     if model_path != None:
@@ -81,25 +81,29 @@ def im_based_training(S = 4, epochs = (20, 5), model_path=None, num_sim = 50, n_
     # Train
     meta_iterations, iterations = epochs
 
-    datafiles = [f"data/SAR_pairs_4_100000_{i}.pt" for i in range(1, 5)]
-    dataset = ActionDataset(datafiles, 2500000, 100000)
+    datafiles = [f"data/SAR_pairs_4_100000_{i}.pt" for i in range(1, 2)]
+    dataset = ActionDataset(datafiles, 750000, 100000)
     all_losses = []
+    pol_losses = []
+    val_losses = []
     for i in tqdm(range(meta_iterations)):
-        losses, _, _= train(model, dataset, iterations, batch_size = 2048, lr=(lr / math.log(i * iterations + math.e)), device = device)
-        torch.save(model.state_dict(), f'models/model_{i}.pt')
+        losses, pl, vl= train(model, dataset, iterations, batch_size = 1024, lr=(lr / math.log(i * iterations + math.e)), device = device, val_weight=.05)
+        torch.save(model.state_dict(), f'models/model_{id}_{i}.pt')
         all_losses += losses
+        pol_losses += pl
+        val_losses += vl
 
     print(f"All Losses: {all_losses}")
 
     print(f"Beginning Evaluation")
     model.eval()
     # Self-play
-    successes, avg_reward = self_play(model, S, canonical, n_plays = n_plays, num_sim = num_sim, identifier=1)
+    successes, avg_reward = self_play(model, S, n_plays = n_plays, num_sim = num_sim, identifier=1)
 
     print(f"Successful trajectories: {len(successes)}")
     print(f"Avg Reward: {avg_reward}")
 
-    torch.save(model.state_dict(), "models/model_1.pt")
+    torch.save(model.state_dict(), "models/model_{id}_f.pt")
 
 if __name__ == "__main__":
-    im_based_training()
+    im_based_training(model_path='models/model_4.pt')
