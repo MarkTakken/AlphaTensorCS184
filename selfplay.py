@@ -57,6 +57,7 @@ def self_play(model, S: int, n_plays, canonical = canonical, num_sim = 10, max_a
             states.append(mcts.root.state)
             # search_and_play already calls search internally
             r, action = mcts.search_and_play(num_sim)
+            action = torch.tensor(sorted(action.tolist()))  # Hacky canonicalization
             actions.append(action)
             rewards.append(r)
 

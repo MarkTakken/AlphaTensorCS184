@@ -24,6 +24,7 @@ def generate_sample_r1(S: int, vals: list[int], factor_dist: list[float]):
     nonzero = False
     while not nonzero:
         t = np.random.choice(vals, size=(3, S), p=factor_dist)
+        t = t[np.lexsort(t.T[::-1])]  # Canonicalization
         m = np.tensordot(np.tensordot(t[0, :], t[1, :], axes=0), t[2, :], axes=0)
         assert m.shape == (S, S, S)
         nonzero = np.any(m)
