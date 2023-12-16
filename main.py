@@ -78,7 +78,7 @@ def train_selfplay_loop(iterations = 10, S = 4, model_path = None, num_sim = 20,
         collect()
 
 
-def im_based_training(S = 4, epochs = (10, 10), model_path=None, num_sim = 50, n_plays = 20, batch_size = 1024, lr = 0.001, id = 3, val_weight = .05):
+def il_based_training(S = 4, epochs = (10, 10), model_path=None, num_sim = 50, n_plays = 20, batch_size = 1024, lr = 0.001, id = 3, val_weight = .05):
     # Trains primarily by imitating the pre-generated trajectories, and then engages in self-play
     # Takes as a parameter, S the dimension
     # epochs as a tuple of meta-epochs and epochs, where meta-epochs decrease the learning rate over time
@@ -143,5 +143,5 @@ def run_selfplay(model_path, num_sim = 50, n_plays = 5, device = 'cuda', id = 3)
     print(avg_reward)
 
 if __name__ == "__main__":
-    #im_based_training(model_path="models/model_31_4.pt", epochs=(5, 5), lr=.0001, id=32)
-    run_selfplay("models/model_32_4.pt", num_sim=50, n_plays=10, id=32)
+    #il_based_training(model_path="models/model_31_4.pt", epochs=(5, 5), lr=.0001, id=32)
+    run_selfplay("models/model_32_4.pt", num_sim=75, n_plays=5, id=35)

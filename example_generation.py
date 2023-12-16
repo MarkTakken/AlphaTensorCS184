@@ -21,6 +21,7 @@ from tqdm import tqdm
 ## Reward is simply float
 
 def generate_sample_r1(S: int, vals: list[int], factor_dist: list[float]):
+    ## Generates a SxSxS tensor of rank 1 with nonzero entries by multiplying three Sx1 tensors
     nonzero = False
     while not nonzero:
         t = np.random.choice(vals, size=(3, S), p=factor_dist)
@@ -31,7 +32,13 @@ def generate_sample_r1(S: int, vals: list[int], factor_dist: list[float]):
     
 
 def main(S: int, r_limit: int, factor_dist: dict, N: int, seed: int = None):
-    # The primary method of generation.
+    # The primary method of generation of synthetic trajectories
+    ## Arguments:
+    ## S as the dimension of the tensor
+    ## r_limit as an int, which is the maximum number of actions in the trajectory
+    ## factor_dist as a dict, which is the distribution of factors
+    ## N as an int, which is the number of trajectories to generate
+    ## seed as an int, which is the seed for the random number generator. If none, random
     if seed is not None:
         random.seed(seed)
 

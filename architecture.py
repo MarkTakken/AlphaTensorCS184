@@ -5,12 +5,19 @@ from torch import nn
 import utilities
 from collections import namedtuple
 
-## Adding batching?  Mark: Done.
-## Mark: I think the LayerNorm should be on the last axis only, so I've changed
-##      that, but kept the original shape in comments on the side just in case
+## All components of the model are implemented as nn.Modules
+## All handle batching of the data
 
 class Attention(nn.Module):
     def __init__(self, c1, c2, causal_mask = False, N_heads = 16, w = 4, device = 'cuda'):
+        ## Arguments:
+        ## c1 as an int, which is the number of features in the first tensor
+        ## c2 as an int, which is the number of features in the second tensor
+        ## causal_mask as a boolean, which is whether to use a causal mask
+        ## N_heads as an int, which is the number of heads to use in the multihead attention
+        ## w as an int, which is a multiplier in the linear layer
+        ## device as a string, which is the device to use for the model
+
         super().__init__()
         self.ln1 = nn.LayerNorm([c1])  # [Nx, c1]
         self.ln2 = nn.LayerNorm([c2])  # [Ny, c2]
@@ -35,7 +42,12 @@ class Attention(nn.Module):
         return x
 
 class AttentiveModes(nn.Module):
+    ## AttentiveModes, as described in the AlphaTensor Paper
+
     def __init__(self, s, c, device = 'cuda'):
+        ## Arguments:
+        ## s as an int, which is the dimension of the cubic tensor
+        ## c as an int, which is the number of features extracted for each flattened component of the tensor
         super().__init__()
         self.device = device
         self.attention = Attention(c, c, N_heads = 8, device=device)
@@ -54,7 +66,14 @@ class AttentiveModes(nn.Module):
 
 
 class Torso(nn.Module):
+    # The torso of the model
     def __init__(self, s, c, i, device = 'cuda'):
+        ## Arguments:
+        ## s as an int, which is the dimension of the cubic tensor
+        ## c as an int, which is the number of features extracted for each flattened component of the tensor
+        ## i as an int, which is the number of iterations of the attentive methods
+        ## device as a string, which is the device to use for the model
+
         super().__init__()
         self.device = device
         self.l1 = nn.Linear(s, c)
@@ -64,6 +83,12 @@ class Torso(nn.Module):
         self.i = i
 
     def forward(self, x):
+        ## Arguments:
+        ## x: SxSxS tensor
+
+        ## Returns: 
+        ## e: 3S^2 x c tensor
+
         x1 = torch.permute(x, (0, 1, 2, 3))
         x2 = torch.permute(x, (0, 2, 3, 1))
         x3 = torch.permute(x, (0, 3, 1, 2))
@@ -79,9 +104,22 @@ class Torso(nn.Module):
         return e
 
 class PolicyHead(nn.Module):
-    # Currently assumes our implemented tokenization scheme
-    # That is, Nstesp = s and Nlogits = range^3
+    # The Policy Head of the model
+    
+    # Assumes the implemented tokenization scheme
+    # Nsteps = s and Nlogits = range^3
+    # We keep these free to protect against changes in the tokenization scheme
     def __init__(self, Nsteps, elmnt_range, s, c, Nfeatures = 64, Nheads = 16, Nlayers = 2, device = 'cuda'):
+        ## Arguments:
+        ## Nsteps as an int, which is the number of tokens to predict/steps of attention
+        ## elmnt_range as a tuple[int, int], which is the range of elements in the actions
+        ## s as an int, which is the dimension of the tensor. Currently unused.
+        ## c as an int, which is the number of features in the torso. Torso passes 3S^2 * c
+        ## Nfeatures as an int, which is the number of features used in the attentive methods
+        ## Nheads as an int, which is the number of heads used in the attentive methods
+        ## Nlayers as an int, which is the number of layers of self- and cross- attention
+        ## device as a string, which is the device to use for the model
+
         super().__init__()
         self.Nlayers = Nlayers
         self.Nlogits = (elmnt_range[1]-elmnt_range[0]+1)**3
@@ -95,8 +133,6 @@ class PolicyHead(nn.Module):
         self.START_TOK = self.Nlogits
         self.pos_embedding = nn.Embedding(Nsteps, Nfeatures * Nheads)
 
-        # I figure if we are keeping the weights in the LayerNorm, we might as well have
-        #   a different one for each layer, but idk really
         self.ln1 = nn.ModuleList([nn.LayerNorm([Nfeatures * Nheads]) for _ in range(Nlayers)])  # [Nsteps, Nfeatures * Nheads]
         self.dropout = nn.Dropout(p=0.1)
         self.self_attention = nn.ModuleList([Attention(Nfeatures * Nheads, Nfeatures * Nheads, causal_mask=True, N_heads=Nheads, device=device) for _ in range(Nlayers)])
@@ -106,7 +142,13 @@ class PolicyHead(nn.Module):
         self.relu = nn.ReLU()
         self.lfinal = nn.Linear(Nfeatures * Nheads, self.Nlogits)
 
-    def predict_logits(self, a, e):   # Assumes a is in tokenized, not one-hot form
+    def predict_logits(self, a, e):
+        ## Arguments:
+        ## a as a tensor, which is the tokenized actions
+        ## e as a tensor, which is the output of the torso
+
+        ## Returns:
+        ## o as a tensor, which is the logits for the actions
         x = self.tok_embedding(a)
         positions = torch.arange(a.shape[1]).repeat((a.shape[0], 1)).to(self.device)
         x = x + self.pos_embedding(positions)
@@ -120,7 +162,7 @@ class PolicyHead(nn.Module):
             c = self.dropout(c)
             x = x + c
         o = self.lfinal(self.relu(x))
-        return o    # Don't need x bc we are not feeding it to the value head
+        return o 
     
     def forward(self, e, **kwargs):
         if self.training:
@@ -130,15 +172,10 @@ class PolicyHead(nn.Module):
         
         else:
             Nsamples = kwargs['Nsamples']
-            #a = torch.zeros((Nsamples, self.Nsteps)).long()
             a = [[self.START_TOK] for _ in range(Nsamples)]
             p = torch.ones(Nsamples)
-            #z = torch.zeros((Nsamples, self.Nsteps, self.Nfeatures * self.Nheads))
-            #Don't care about exporting Z anymore
             for j in range(Nsamples):
                 for i in range(self.Nsteps):
-                    # encoded = nn.functional.one_hot(a[j, :], self.Nlogits)
-                    # o, _ = self.predict_logits(encoded.float(), e)
                     o = self.predict_logits(torch.tensor([a[j]]).to(self.device), e)
                     probs = torch.softmax(o[0, i, :], -1).to('cpu')
                     tok = torch.multinomial(probs, num_samples=1).item()
@@ -152,7 +189,12 @@ class PolicyHead(nn.Module):
             
 
 class ValueHead(nn.Module):
+    ## The value head of the model
     def __init__(self, c, d):
+        ## Arguments:
+        ## c as an int, which is the number of features in the torso. Torso passes 3S^2 * c but we mean
+        ## d as an int, which is the number of dimensions in the value head
+
         super().__init__()
         self.c = c
         self.d = d
@@ -170,8 +212,6 @@ class ValueHead(nn.Module):
         x = self.relu(self.l3(x))
         x = self.lf(x)
         return x
-
-## Mark: Removed duplication?
 
 class AlphaTensor184(nn.Module):
     ## The main assembly of the model
