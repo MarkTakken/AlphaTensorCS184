@@ -18,6 +18,9 @@ utilities.py
 
 Additionally, main.py holds the three primary modes in which you may want to run the loop at-large.
 
+Prior to running a training method, you should generate data with example_generation.
+The samples of data are too large to store, and relatively fast to generate.
+
 If you are running this program, the following additional folders are used:
 
 models/
@@ -29,4 +32,4 @@ tests.py
 testing.ipynb
 selfplay_tests.py
 
-analysis.ipynb is used to generate information for the report. 
+analysis.ipynb is used to generate information for the report, based on information within results. 
