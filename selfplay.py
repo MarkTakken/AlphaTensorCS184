@@ -82,7 +82,7 @@ def self_play(model, S: int, n_plays, canonical = canonical, num_sim = 10, max_a
         total_reward += reward
 
         if mcts.root.is_zero():
-            orig_actions = [action @ bases_changes[i] for action in actions]
+            orig_actions = [action @ bases_changes[i].T for action in actions]    # I think this should be transposed, but actually not 100% sure
             successful_trajectories.append((target, orig_actions))
     
     torch.save(successful_trajectories, f"data/successful_trajectories_{identifier}.pt")
