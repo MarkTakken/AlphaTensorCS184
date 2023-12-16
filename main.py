@@ -144,4 +144,4 @@ def run_selfplay(model_path, num_sim = 50, n_plays = 5, device = 'cuda', id = 3)
 
 if __name__ == "__main__":
     #il_based_training(model_path="models/model_31_4.pt", epochs=(5, 5), lr=.0001, id=32)
-    run_selfplay("models/model_32_4.pt", num_sim=75, n_plays=5, id=35)
+    run_selfplay("models/model_32_4.pt", num_sim=50, n_plays=5, id=35)
