@@ -4,3 +4,4 @@ data/SAR_pairs_3_100000_123456.pt
 data/
 __pycache__/
 .DS_Store
+plots/
