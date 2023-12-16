@@ -6,6 +6,8 @@ from utilities import *
 from selfplay import *
 from time import time
 
+## Various tests we conducted over time.
+
 S = 4
 c = 64
 d = 48

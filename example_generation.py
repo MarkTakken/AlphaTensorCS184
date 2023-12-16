@@ -31,6 +31,7 @@ def generate_sample_r1(S: int, vals: list[int], factor_dist: list[float]):
     
 
 def main(S: int, r_limit: int, factor_dist: dict, N: int, seed: int = None):
+    # The primary method of generation.
     if seed is not None:
         random.seed(seed)
 

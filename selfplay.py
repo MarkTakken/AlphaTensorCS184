@@ -24,6 +24,19 @@ canonical[3, 3, 3] = 1
 
 def self_play(model, S: int, n_plays, canonical = canonical, num_sim = 10, max_actions = 10,
               cob_entries = torch.tensor([-1, 0, 1]), cob_probs = torch.tensor([.05, .9, .05]), identifier=1, device='cuda'):
+    # Engages in self-play using MCTS and model. Arugments:
+    # model as a nn.Module, which is the model to use for MCTS
+    # S as an int, which is the dimension of the tensor
+    # n_plays as an int, which is the number of games to play
+    # canonical as a tensor, which is the canonical state. Defaults to the 4x4x4 tensor for matrix multiplication of 2x2 matrices
+    # num_sim as an int, which is the number of simulations to run for each MCTS
+    # max_actions as an int, which is the maximum number of actions to take in a game
+    # cob_entries as a tensor, which is the entries to use for the change of basis
+    # cob_probs as a tensor, which is the probabilities to use for the change of basis
+    # identifier as an int, which is the identifier for the self-play and saving the files
+    # device as a string, which is the device to use for the model
+
+    # returns a list of tuples of (Initial State, [Actions], Final State) for successful trajectories, and average reward
     model.eval()
 
     # Build a set of target tensors
@@ -92,12 +105,13 @@ def self_play(model, S: int, n_plays, canonical = canonical, num_sim = 10, max_a
 
 def self_play2(index, model, S: int, n_plays, canonical = canonical, num_sim = 10, max_actions = 10,
               cob_entries = torch.tensor([-1, 0, 1]), cob_probs = torch.tensor([.05, .9, .05]), device='cuda'):
+    # Wrapper on self-play to reorder arguments for parallelization
     return self_play(model, S, n_plays, canonical=canonical, num_sim=num_sim, max_actions=10,
                      cob_entries=cob_entries, cob_probs=cob_probs, identifier=index, device=device)
 
 def self_play_parallel(procs, model, S: int, n_plays, canonical = canonical, num_sim = 10, identifier=1, max_actions = 10,
               cob_entries = torch.tensor([-1, 0, 1]), cob_probs = torch.tensor([.05, .9, .05]), device='cuda'):
-    
+    #Wrapper on self_play to parallelize
     with Pool(procs) as p:
         return p.map(partial(self_play2, model=model, S=S, n_plays=n_plays, canonical=canonical, num_sim=num_sim,
                              max_actions = max_actions, cob_entries=cob_entries, cob_probs=cob_probs, device=device),

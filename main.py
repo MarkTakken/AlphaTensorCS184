@@ -8,10 +8,21 @@ from selfplay import *
 from gc import collect
 import math
 
-def train_selfplay_loop(iterations = 10, S = 4, model_path = None, num_sim = 2, 
-         max_actions = 16, n_plays = 1024, max_pregen = 500000, max_selfplay = 500000, epochs_per_iteration = 1, 
+def train_selfplay_loop(iterations = 10, S = 4, model_path = None, num_sim = 20, 
+         max_actions = 16, n_plays = 1024, max_pregen = 500000, max_selfplay = 500000, epochs_per_iteration = 5, 
          batch_size = 1024, lr = 0.02):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # iterations as an int, which is the number of iterations of the training-self-play loop to run
+    # S as the dimension of the tensor
+    # model_path as a string, which is the path to the model to load (if None, then initialize a new model)
+    # num_sim as an int, which is the number of simulations to run for each MCTS
+    # max_actions as an int, which is the maximum number of actions to take in a game
+    # n_plays as an int, which is the number of games to play for self-play
+    # max_pregen as an int, which is the maximum number of pre-generated trajectories to store
+    # max_selfplay as an int, which is the maximum number of self-play trajectories to store
+    # epochs_per_iteration as an int, which is the number of epochs to train for each iteration
+    # batch_size as an int, which is the batch size for training
+    # lr as a float, which is the learning rate
 
     # Either initialize or load the model
     for i in range(iterations):
@@ -67,7 +78,18 @@ def train_selfplay_loop(iterations = 10, S = 4, model_path = None, num_sim = 2,
         collect()
 
 
-def im_based_training(S = 4, epochs = (10, 10), model_path=None, num_sim = 50, n_plays = 20, lr = 0.001, id = 3):
+def im_based_training(S = 4, epochs = (10, 10), model_path=None, num_sim = 50, n_plays = 20, batch_size = 1024, lr = 0.001, id = 3, val_weight = .05):
+    # Trains primarily by imitating the pre-generated trajectories, and then engages in self-play
+    # Takes as a parameter, S the dimension
+    # epochs as a tuple of meta-epochs and epochs, where meta-epochs decrease the learning rate over time
+    # model_path as a string, which is the path to the model to load (if None, then initialize a new model)
+    # num_sim as an int, which is the number of simulations to run for each MCTS
+    # n_plays as an int, which is the number of games to play for self-play
+    # batch_size as an int, which is the batch size for training
+    # lr as a float, which is the learning rate
+    # id as an int, which is the identifier for the model
+    # val_weight as a float, which is the weight of the value loss in the total loss
+
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
@@ -89,7 +111,7 @@ def im_based_training(S = 4, epochs = (10, 10), model_path=None, num_sim = 50, n
     pol_losses = []
     val_losses = []
     for i in tqdm(range(meta_iterations)):
-        losses, pl, vl= train(model, dataset, iterations, batch_size = 1024, lr=(lr / math.log(i * iterations + math.e)), device = device, val_weight=.05)
+        losses, pl, vl= train(model, dataset, iterations, batch_size = batch_size, lr=(lr / math.log(i * iterations + math.e)), device = device, val_weight=val_weight)
         torch.save(model.state_dict(), f'models/model_{id}_{i}.pt')
         all_losses += losses
         pol_losses += pl
@@ -109,5 +131,17 @@ def im_based_training(S = 4, epochs = (10, 10), model_path=None, num_sim = 50, n
 
     torch.save(model.state_dict(), "models/model_{id}_f.pt")
 
+def run_selfplay(model_path, num_sim = 50, n_plays = 5, device = 'cuda', id = 3):
+    ## Runs only selfplay, with provided num_sim, n_plays, and model_path
+    model = AlphaTensor184(s = 4, c = 48, d = 48, elmnt_range=(-2, 2), N_policy_features=48, N_policy_heads=12, Nsteps=4, Nsamples=24, torso_iterations=4)
+    model.load_state_dict(torch.load(model_path))   
+    model.to(device)
+    model.eval()
+    with torch.no_grad():
+        successes, avg_reward = self_play(model, 4, n_plays = n_plays, num_sim = num_sim, identifier=id)
+    print(successes)
+    print(avg_reward)
+
 if __name__ == "__main__":
-    im_based_training(model_path="models/model_31_4.pt", epochs=(5, 5), lr=.0001, id=32)
+    #im_based_training(model_path="models/model_31_4.pt", epochs=(5, 5), lr=.0001, id=32)
+    run_selfplay("models/model_32_4.pt", num_sim=50, n_plays=10, id=32)

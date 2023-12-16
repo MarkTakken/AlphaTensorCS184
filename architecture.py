@@ -10,7 +10,6 @@ from collections import namedtuple
 ##      that, but kept the original shape in comments on the side just in case
 
 class Attention(nn.Module):
-    
     def __init__(self, c1, c2, causal_mask = False, N_heads = 16, w = 4, device = 'cuda'):
         super().__init__()
         self.ln1 = nn.LayerNorm([c1])  # [Nx, c1]
@@ -174,11 +173,21 @@ class ValueHead(nn.Module):
 
 ## Mark: Removed duplication?
 
-## Before implementing heads, read up on Torch head/transformer modules and how they work further. Unclear to me if their transformers do what we want. 
-## Also, need to be careful with setting up training vs acting
-
 class AlphaTensor184(nn.Module):
+    ## The main assembly of the model
     def __init__(self, s, c, d, elmnt_range, Nsteps, Nsamples, N_policy_features = 48, N_policy_heads = 12, torso_iterations = 8, device = 'cuda'):
+        ## Takes arguments to build the neural network. Arguments:
+        ## s as an int, which is the dimension of the cubic tensor
+        ## c as an int, which is the number of features in the torso
+        ## d as an int, which is the number of dimensions in the value head
+        ## elmnt_range as a tuple[int, int], which is the range of elements in the actions
+        ## Nsteps as an int, which is the number of steps of attention required in the policy head
+        ## Nsamples as an int, which is the number of sampled actions to take in the policy head
+        ## N_policy_features as an int, which is the number of features used in the attentive methods in the policy head
+        ## N_policy_heads as an int, which is the number of heads used in the attentive methods in the policy head
+        ## torso_iterations as an int, which is the number of iterations of the attentive methods in the torso
+        ## device as a string, which is the device to use for the model
+
         super().__init__()
         self.s = s
         self.c = c

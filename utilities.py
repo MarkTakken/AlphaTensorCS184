@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 import itertools
 
 class Tokenizer():
+    ## Our tokenizer is a simple linear map from the space of integers to the space of tokens
     def __init__(self, range: tuple[int, int] = (-2, 2)) -> None:
         self.low, self.high = range
     
@@ -24,6 +25,8 @@ class Tokenizer():
     
 
 class ActionDataset(Dataset):
+    ## Our dataset is a simple concatenation of pre-generated and self-play trajectories
+    ## Extends the torch dataset class
     def __init__(self, pregen_files, max_pregen, max_selfplay, selfplay_multiplier = 3, selfplay_files = None):
         self.max_pregen = max_pregen
         self.max_selfplay = max_selfplay
@@ -51,6 +54,7 @@ class ActionDataset(Dataset):
             self.selfplay_actions = self.selfplay_actions[len(self.selfplay_actions) - self.max_selfplay:]
 
 def change_of_basis(S, cob_entries, cob_probs):
+    ## Change of basis matrix for the tensor game. Takes tensors with entries and probs.
     P = torch.zeros(S, S, dtype=int)
     L = torch.zeros(S, S, dtype=int)
     diag_entries = torch.tensor([-1,1])
@@ -65,6 +69,7 @@ def change_of_basis(S, cob_entries, cob_probs):
     return P @ L
 
 def apply_COB(state, M):
+    # Applies a COB M. 
     state = torch.einsum('ijk, ia -> ajk', state, M)
     state = torch.einsum('ijk, ja -> iak', state, M)
     state = torch.einsum('ijk, ka -> ija', state, M)
