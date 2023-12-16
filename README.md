@@ -3,4 +3,30 @@ Before running, data should be generated into a data/ folder, and, if using a pr
 
 ## Download
 
-To download the trained model mentioned in the paper, visit the link contained within the paper. 
+To use the trained model mentioned in the paper, use model_32_4.pt, which is in results.
+
+## Primary Code:
+
+The following python files hold central classes and functions of AlphaTensorCS184:
+
+architecture.py
+training.py
+selfplay.py
+tensorgame.py
+training.py
+utilities.py
+
+Additionally, main.py holds the three primary modes in which you may want to run the loop at-large.
+
+If you are running this program, the following additional folders are used:
+
+models/
+data/ 
+
+Within tests/, there are three scripts used for testing. They should be put into the primary folder before running:
+
+tests.py
+testing.ipynb
+selfplay_tests.py
+
+analysis.ipynb is used to generate information for the report. 
